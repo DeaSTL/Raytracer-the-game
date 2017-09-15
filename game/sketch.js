@@ -1,11 +1,15 @@
+//Enemy Config
 var enemy_spawn_rate = 14;
 var enemy_damage_rate = 10;
 var bonus_round_enemy_spawn_rate = 5 
+////////////////////////////////////
 var score_incrementor = 1;                            
+var score_required_bonus_round = 100;
 var bonus_round = false;
-var mainPlayer;
-var enemyList = [];
-var float_text_list = [];   
+var main_player;
+var enemy_list = [];
+var float_text_list = []; 
+
 
 function Player(x,y){
 	this.position = {x:x,y:y};
@@ -30,9 +34,7 @@ function Player(x,y){
 		
 		fill(this.color)
 		rect(this.position.x,this.position.y-100,this.width,this.height);
-		if(frameCount%10 == 0){
-			this.score+= score_incrementor;
-		}		
+			
 		
 	};
 		
@@ -83,47 +85,54 @@ function Enemy(x,y){
 		return collideRectRect(x,y,width,height,this.position.x,this.position.y,this.width,this.height);
 	};	
 };
-function GenerateEnemies(){
-	if(bonus_round){
-		if(frameCount%bonus_round_enemy_spawn_rate == 0){
-			enemyList.push(new Enemy(Math.random()*windowWidth,-200))		
-		}
-	}else{
-		if(frameCount%enemy_spawn_rate == 0){
-			enemyList.push(new Enemy(Math.random()*windowWidth,-200))		
-		}
+function GenerateEntities(){
+
+
+	if(frameCount%enemy_spawn_rate == 0){
+		enemy_list.push(new Enemy(Math.random()*windowWidth,-200))		
 	}
+
 }
 function DrawEnemies(){
-	for(var i = 0;i<enemyList.length;i++){
-		currentEnemy = enemyList[i];
-		collision = currentEnemy.collides(mainPlayer.position.x,mainPlayer.position.y-100,mainPlayer.width,mainPlayer.height);
+	for(var i = 0;i<enemy_list.length;i++){
+		currentEnemy = enemy_list[i];
+		collision = currentEnemy.collides(main_player.position.x,main_player.position.y-100,main_player.width,main_player.height);
 
 		if(collision == true){
-			addNewFloatText("-10",mainPlayer.position.x,mainPlayer.position.y);
-			mainPlayer.health -= 10;
-			mainPlayer.color = mainPlayer.health;
-			if(mainPlayer.health < 1){
-				mainPlayer.health = 255;
-				mainPlayer.score = 0;
+			addNewFloatText("-10",main_player.position.x,main_player.position.y);
+			main_player.health -= 10;
+			main_player.color = main_player.health;
+			if(main_player.health < 1){
+				main_player.health = 255;
+				main_player.score = 0;
 			}
-			enemyList.splice(i,1);
+			enemy_list.splice(i,1);
 			
 		
 		}
 		
 		currentEnemy.draw();
 		currentEnemy.position.y += currentEnemy.speed;
-		if(mainPlayer.score % 100 == 0){
+		if(main_player.score == score_required_bonus_round){
 			bonus_round = true;
 			score_incrementor = 5;
 		}
-		if(mainPlayer.score % 350 == 0){
+		if(main_player.score == score_required_bonus_round+100){
 			bonus_round = false;
+			score_required_bonus_round *= 2;
 			score_incrementor = 1;
 		}
-		if(currentEnemy.position.y >= windowHeight+500){
-			enemyList.splice(i,1);
+		
+		if(currentEnemy.position.y >= windowHeight+200){
+			if(bonus_round){
+				addNewFloatText("+5",currentEnemy.position.x,windowHeight+10);
+				main_player.score += 5;
+			}else{
+				addNewFloatText("+1",currentEnemy.position.x,windowHeight+10);
+				main_player.score += 1;
+			}			
+			enemy_list.splice(i,1);
+
 		}
 		if(bonus_round){
 			enemy_spawn_rate = 10;
@@ -148,7 +157,7 @@ function addNewFloatText(input_text,x,y){
 
 
 function setup(){
-	mainPlayer = new Player(windowHeight-50,windowWidth/2)
+	main_player = new Player(windowHeight-50,windowWidth/2)
 	createCanvas(windowWidth-10,windowHeight-10);
 	//noFill();
 	textSize(32);
@@ -160,33 +169,34 @@ function setup(){
 
 
 function draw(){
-	GenerateEnemies();
+	GenerateEntities();
 			
 	background(0);
 	DrawFloatText();
 	DrawEnemies();
-	mainPlayer.draw();
+	main_player.draw();
 	fill(255);
-	text("Health: "+mainPlayer.health,100,100);
-	text("Score: "+mainPlayer.score,100,100+35);
+	text("Health: "+main_player.health,100,100);
+	text("Score: "+main_player.score,100,100+35);
+	text("Points till next bonus: "+(score_required_bonus_round-main_player.score),100,100+35+35);
 
 			
 }
 
 function keyPressed(){
 	if(keyCode == RIGHT_ARROW){
-		mainPlayer.speed = mainPlayer.maxSpeed;
+		main_player.speed = main_player.maxSpeed;
 	}
 	if(keyCode == LEFT_ARROW){
-		mainPlayer.speed = -mainPlayer.maxSpeed;
+		main_player.speed = -main_player.maxSpeed;
 	}	
 }
 
 function keyReleased(){
 	if(keyCode == RIGHT_ARROW){
-		mainPlayer.speed = 0;
+		main_player.speed = 0;
 	}
 	if(keyCode == LEFT_ARROW){
-		mainPlayer.speed = 0;
+		main_player.speed = 0;
 	}
 }
